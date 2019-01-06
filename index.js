@@ -1,61 +1,38 @@
 var app = require("express")();
 var http = require("http").Server(app);
 var io = require("socket.io")(http);
+
 var lobbyManager = require("./src/lobbyManager");
 var logger = require("./src/nlogger");
+var User = require("./src/user");
+var consts = require("./src/consts");
+var utils = require("./src/utils");
+
+logger.info(`Inactivity Timer is : ${consts.TIME_OUT / 1000} seconds`);
+
+//just in case needed later
 app.get("*", (req, res) => {
   res.send("<h1>:)</h1>");
 });
 
 io.on("connection", socket => {
-  let _user;
   socket.on("join", username => {
-    if (lobbyManager.hasUser(username)) {
-      socket.emit("conflict");
+    const { value, valid } = utils.validate(username);
+    if (lobbyManager.hasUser(value) || !valid) {
+      socket.emit("conflict", valid);
     } else {
-      lobbyManager.addUser(username, socket.id);
-      socket.emit("joined", { username });
-      _user = username;
-      io.sockets.emit("message", {
-        type: "INFO",
-        text: "JOINED",
-        timestamp: new Date(),
-        username
-      });
+      lobbyManager.addUser(new User(value, socket));
     }
-  });
-
-  socket.on("message", text => {
-    //Send message to everyone
-    io.sockets.emit("message", {
-      type: "MESSAGE",
-      text: text,
-      timestamp: new Date(),
-      username: _user
-    });
-  });
-
-  socket.on("leave", () => {
-    io.sockets.emit("message", {
-      type: "INFO",
-      text: "LEFT",
-      timestamp: new Date(),
-      username: _user
-    });
-    socket.disconnect();
-  });
-
-  socket.on("disconnect", () => {
-    lobbyManager.removeUser(_user);
   });
 });
 
 http.listen(3000, function() {
-  logger.log("listening on localhost:3000");
+  logger.info("listening on localhost:3000");
 });
 
+//graceful shutdown
 function handle(signal) {
-  logger.log(` Received ${signal}. \n Shutting down gracefully`);
+  logger.sys(` Received ${signal}. \n Shutting down gracefully`);
   io.close();
 }
 

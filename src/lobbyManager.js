@@ -1,5 +1,9 @@
-var User = require("./user");
 var logger = require("./nlogger");
+/**
+ * Lobby to manage the users
+ * dont allow duplictes
+ * SINGLETON
+ */
 class LobbyManager {
   constructor() {
     this.name = "hey";
@@ -10,27 +14,36 @@ class LobbyManager {
     return this.users.length;
   }
 
+  //check if user exists
   hasUser(username) {
     if (this.userIndex(username) === -1) return false;
-    logger.log(`Existing User *${username}* tried to join!`);
+    logger.error(`Existing User *${username}* tried to join!`);
     return true;
   }
 
+  //find out the user index to remove
   userIndex(username) {
     return this.users.findIndex(user => user.username === username);
   }
-  addUser(username, socketId) {
-    this.users.push(new User(username, socketId));
-    logger.log(`Added User *${username}* to [${this.total}] Users`);
+
+  //add user
+  addUser(user) {
+    this.users.push(user);
+    logger.info(`Added User *${user.username}* to [${this.total}] Users`);
   }
 
-  removeUser(username) {
+  //remove user
+  removeUser(username, wasKicked) {
     const index = this.userIndex(username);
     if (index !== -1) {
       this.users.splice(index, 1);
-      logger.log(`Removed User *${username}* with [${this.total}] Users`);
+      logger.warn(
+        `Removed User *${username}* with [${this.total}] Users ${
+          wasKicked ? "Due to inactivity" : ""
+        }`
+      );
     } else {
-      logger.log(`Tried to remove nonexistent user : *${username}*}`);
+      logger.error(`Tried to remove nonexistent user : *${username}*}`);
     }
   }
 }
