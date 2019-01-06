@@ -30,6 +30,11 @@ class NLogger {
     console.log(text);
     this.history.push(text);
   }
+
+  info(text) {
+    console.log(text);
+    this.history.push(text);
+  }
 }
 
 let nlogger = new NLogger();
