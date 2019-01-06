@@ -1,25 +1,19 @@
 var app = require("express")();
 var http = require("http").Server(app);
 var io = require("socket.io")(http);
-
-app.get("*", function(req, res) {
+var lobbyManager = require("./src/lobbyManager");
+var logger = require("./src/nlogger");
+app.get("*", (req, res) => {
   res.send("<h1>:)</h1>");
 });
 
-var users = [];
-
-io.on("connection", function(socket) {
-  console.log("A user connected");
-  var _user;
-  socket.on("join", function(username) {
-    console.log(username);
-
-    if (users.indexOf(username) > -1) {
-      console.log("no");
+io.on("connection", socket => {
+  let _user;
+  socket.on("join", username => {
+    if (lobbyManager.hasUser(username)) {
       socket.emit("conflict");
     } else {
-      console.log("yes");
-      users.push(username);
+      lobbyManager.addUser(username, socket.id);
       socket.emit("joined", { username });
       _user = username;
       io.sockets.emit("message", {
@@ -31,7 +25,7 @@ io.on("connection", function(socket) {
     }
   });
 
-  socket.on("message", function(text) {
+  socket.on("message", text => {
     //Send message to everyone
     io.sockets.emit("message", {
       type: "MESSAGE",
@@ -41,7 +35,7 @@ io.on("connection", function(socket) {
     });
   });
 
-  socket.on("leave", function() {
+  socket.on("leave", () => {
     io.sockets.emit("message", {
       type: "INFO",
       text: "LEFT",
@@ -50,14 +44,18 @@ io.on("connection", function(socket) {
     });
     socket.disconnect();
   });
+
+  socket.on("disconnect", () => {
+    lobbyManager.removeUser(_user);
+  });
 });
 
 http.listen(3000, function() {
-  console.log("listening on localhost:3000");
+  logger.log("listening on localhost:3000");
 });
 
 function handle(signal) {
-  console.log(` Received ${signal}. \n Shutting down gracefully`);
+  logger.log(` Received ${signal}. \n Shutting down gracefully`);
   io.close();
 }
 
