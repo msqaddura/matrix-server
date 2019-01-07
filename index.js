@@ -8,7 +8,7 @@ var User = require("./src/user");
 var consts = require("./src/consts");
 var utils = require("./src/utils");
 
-logger.info(`Inactivity Timer is : ${consts.TIME_OUT / 1000} seconds`);
+logger.log(`Inactivity Timer is : ${consts.TIME_OUT / 1000} seconds`);
 
 //just in case needed later
 app.get("*", (req, res) => {
@@ -27,12 +27,14 @@ io.on("connection", socket => {
 });
 
 http.listen(3000, function() {
-  logger.info("listening on localhost:3000");
+  logger.log("listening on localhost:3000");
 });
 
 //graceful shutdown
 function handle(signal) {
-  logger.sys(` Received ${signal}. \n Shutting down gracefully`);
+  logger.sys(` Received ${signal}. Shutting down gracefully`);
+  logger.farewell();
+  io.sockets.emit("shutdown");
   io.close();
 }
 

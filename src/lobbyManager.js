@@ -33,13 +33,17 @@ class LobbyManager {
   }
 
   //remove user
-  removeUser(username, wasKicked) {
+  removeUser(username, wasKicked, consent) {
     const index = this.userIndex(username);
     if (index !== -1) {
       this.users.splice(index, 1);
       logger.warn(
         `Removed User *${username}* with [${this.total}] Users ${
-          wasKicked ? "Due to inactivity" : ""
+          wasKicked
+            ? "Due to inactivity"
+            : consent
+            ? ""
+            : "Due to connection issues"
         }`
       );
     } else {

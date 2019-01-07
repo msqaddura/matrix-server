@@ -1,7 +1,7 @@
 var lobbyManager = require("./lobbyManager");
 var utils = require("./utils");
+var logger = require("./nlogger");
 const TIME_OUT = require("./consts").TIME_OUT;
-
 /**
  * user handles the socket as he knows when to timed out
  */
@@ -11,7 +11,8 @@ class User {
     this.username = username;
     this.socket = socket;
     this.timer = null;
-    this.wasKicked = false;
+    this.wasKicked = false; //timedout
+    this.consent = false; //he left
     this.hello();
     this.listen();
     this.refreshTimeout();
@@ -60,6 +61,8 @@ class User {
         //dont allow spaces
         if (value.length > 0) {
           this.refreshTimeout();
+          //dont overkill the log with the mesage value or add verbosity level;
+          logger.log(`User : *${username}* sent message ####`);
           this.broacastAll("message", {
             type: "MESSAGE",
             text: value,
@@ -69,6 +72,7 @@ class User {
         }
       })
       .on("leave", () => {
+        this.consent = true;
         this.broacastAll("message", {
           type: "INFO",
           text: "left",
@@ -78,13 +82,20 @@ class User {
         this.socket.disconnect();
       })
       .on("disconnect", () => {
+        if (!this.consent)
+          this.socket.broadcast.emit("message", {
+            type: "INFO",
+            text: "lost connection",
+            timestamp: new Date(),
+            username: this.username
+          });
         this.destory();
       });
   }
 
   //avoid memory leaks
   destory() {
-    lobbyManager.removeUser(this.username, this.wasKicked);
+    lobbyManager.removeUser(this.username, this.wasKicked, this.consent);
     clearTimeout(this.timer);
     this.socket.removeAllListeners();
     this.socket = null;
