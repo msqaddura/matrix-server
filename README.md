@@ -1,3 +1,5 @@
+![Alt text](https://github.com/msqaddura/matrix-server/blob/master/Terminal.png?raw=true "Screen Shot")
+
 # matrix-server
 1) `npm install`
 2) `npm start`
