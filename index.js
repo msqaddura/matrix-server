@@ -26,7 +26,7 @@ io.on("connection", socket => {
   });
 });
 
-http.listen(3000, function() {
+http.listen(process.env.PORT || 3000, function() {
   logger.log("listening on localhost:3000");
 });
 
